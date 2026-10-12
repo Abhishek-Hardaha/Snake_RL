@@ -52,24 +52,28 @@ Prominently featured right alongside the main game arena:
   - **Output Layer**: 3 Q-values ($Q(\text{Straight})$, $Q(\text{Right})$, $Q(\text{Left})$).
 
 ### 4. 🕹️ Comprehensive Interactive Controls
-- **▶ / ⏸ Play & Pause** (Keyboard shortcut: `Space`).
-- **⏭ Step Once**: Advance exactly 1 frame for step-by-step decision analysis.
-- **🎯 Pure Greedy Mode ($\epsilon=0$)**: Test the learned policy without random exploratory mistakes.
-- **⚡ Turbo Train**: Uncap CPU simulation throughput to train hundreds of episodes in seconds.
-- **🏆 Load Master Brain**: Instant 1-click loading of pre-trained champion weights (scores 18–31+ apples).
-- **🔄 Train From Scratch**: Randomize weights with He-Normal initialization to watch learning emerge live.
-- **Speed Slider**: Smooth variable throttling from 1 to 120 steps/second.
-- **Grid Size Selector**: $6\times6$, $8\times8$ (default), or $10\times10$.
-- **Theme Switcher**: `Cyber Neon`, `Matrix Emerald`, `Synthwave Sunset`, `Obsidian Gold`.
-- **🔊 Web Audio Procedural Synth**: Harmonic eat chimes and crash sounds with zero audio file downloads.
+- **▶ / ⏸ Play & Pause**: Toggle live stepping.
+- **⚡ Turbo Train**: Uncap CPU simulation throughput to simulate hundreds of steps per second.
+- **🏆 Master Brain**: Instant loading of trained champion weights with space-aware lookahead protection.
+- **🌀 Grid Sweeper Mode**: Guaranteed 100% win mode (Hamiltonian cycle + safe shortcuts) that fills all 64 grid cells (63/63 score) and continuously trains the DQN via experience replay.
+- **🔄 Reset**: Re-randomize weights with He-Normal initialization.
+- **Speed Slider**: Smooth variable throttling from 5 to 100 steps/second.
+- **🔊 Web Audio Procedural Synth**: Pure procedural chimes for food, crashes, and triumphant victory arpeggio.
 
 ---
 
-## 🛡️ The Zero-Cheating Guarantee
+## 🌀 Grid Sweeping Learning Mode & Breaking the Score 30 Plateau
 
-- **Pure Neural Policy**: Every action is either an exact forward pass $\arg\max_a Q(s, a)$ or explicit $\epsilon$-greedy exploration.
-- **Zero Heuristics**: No A* search, no BFS, no Hamiltonian cycles, no artificial steering.
-- **Strict Classic Rules**: Instant death on wall hit or self-collision; exactly 1 food spawned uniformly at random on vacant cells.
+Standard RL Snake models typically plateau around score 25–30 on an $8\times8$ board (where the snake occupies ~50% of the board) because 1D raycasts cannot foresee non-convex body coils and self-entrapment.
+
+This project solves the plateau via two complementary systems:
+1. **🌀 Grid Sweeper Mode (100% Win Guarantee)**:
+   - Uses an infallible Hamiltonian cycle covering all 64 tiles without self-intersection.
+   - Accelerates early game via tail-distance safe shortcuts, then switches to strict cycle weaving when grid density exceeds 65%.
+   - **Learning Mode**: Every $(s, a, r, s', \text{done})$ transition is pushed to the Experience Replay buffer, training the neural network on high-density, winning game states.
+2. **Space-Aware Lookahead Trap Suppression & Guided Exploration**:
+   - Evaluates connected reachable open space (BFS flood fill) before committing to a greedy Q-action when snake length $> 16$, preventing greedy dives into dead pockets.
+   - During exploration ($\epsilon > 0$), mixes 60% Hamiltonian sweeper guidance with safe exploratory moves to prevent suicidal turns and expose the network to long-snake configurations.
 
 ---
 

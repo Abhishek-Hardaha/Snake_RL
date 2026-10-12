@@ -272,6 +272,19 @@ html, body {
   background: rgba(255, 215, 0, 0.12);
 }
 
+.btn-sweeper {
+  color: var(--teal);
+}
+.btn-sweeper:hover {
+  background: rgba(0, 229, 163, 0.14);
+}
+.btn-sweeper.active {
+  background: rgba(0, 229, 163, 0.22);
+  border-color: var(--teal);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(0, 229, 163, 0.35);
+}
+
 .btn-reset {
   color: var(--text-muted);
 }
@@ -614,6 +627,12 @@ html, body {
   background: rgba(0, 229, 255, 0.08);
   padding: 1px 6px;
   border-radius: 4px;
+}
+.policy-tag.sweeper {
+  color: var(--teal);
+  background: rgba(0, 229, 163, 0.15);
+  border: 1px solid rgba(0, 229, 163, 0.4);
+  box-shadow: 0 0 10px rgba(0, 229, 163, 0.25);
 }
 .q-bars-grid {
   padding: 8px 12px;

@@ -48,6 +48,7 @@
         <button class="btn btn-primary" id="btn-play-pause" onclick="app.togglePlayPause()">⏸ Pause</button>
         <button class="btn btn-turbo" id="btn-turbo" onclick="app.toggleTurbo()">⚡ Turbo</button>
         <button class="btn btn-champ" id="btn-load-champion" onclick="app.loadChampionWeights()">🏆 Master Brain</button>
+        <button class="btn btn-sweeper" id="btn-sweeper-mode" onclick="app.toggleSweeperMode()" title="Grid Sweeping Learning Mode: Guaranteed to win (63/63) and trains the DQN">🌀 Grid Sweeper</button>
         <button class="btn btn-reset" onclick="app.restartFromScratch()">🔄 Reset</button>
         <div class="speed-wrap" title="Speed">
           <input type="range" class="speed-slider" id="speed-slider" min="5" max="100" value="30" oninput="app.setSpeed(this.value)">
