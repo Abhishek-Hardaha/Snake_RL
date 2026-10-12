@@ -29,6 +29,7 @@
       <div class="stat-pill"><span class="lbl">Episode</span><span class="val" id="stat-episode">1</span></div>
       <div class="stat-pill"><span class="lbl">ε</span><span class="val violet" id="stat-epsilon">1.00</span></div>
       <div class="stat-pill"><span class="lbl">SPS</span><span class="val teal" id="hdr-sps">0</span></div>
+      <div class="stat-pill reward-stat-pill"><span class="lbl">Reward</span><span class="val" id="hdr-reward">+0.00</span></div>
       <button class="icon-btn" id="btn-audio" onclick="app.toggleAudio()" title="Sound ON/OFF">🔇</button>
     </div>
   </header>
@@ -55,7 +56,7 @@
       </div>
     </section>
 
-    <!-- Right Stage: Last 30 Runs Performance & Real-Time Thoughts -->
+    <!-- Right Stage: Last 30 Runs Performance, Reward Signal, Decision & Brain -->
     <aside class="sidebar">
 
       <!-- ⭐ The Last 30 Runs Performance Panel -->
@@ -72,11 +73,40 @@
         </div>
 
         <div class="chart-wrap">
-          <canvas id="canvas-last-30" width="370" height="125"></canvas>
+          <canvas id="canvas-last-30" width="370" height="115"></canvas>
           <div class="chart-tooltip" id="tooltip-last-30"></div>
         </div>
 
-        <div class="runs-feed" id="runs-history-list"></div>
+        <!-- Clean horizontal chips row with zero text spilling -->
+        <div class="runs-chips-row" id="runs-history-list"></div>
+      </div>
+
+      <!-- ⚡ Live Reward & Penalty Signals Display -->
+      <div class="card reward-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="card-title">Reward &amp; Penalty Signal</span>
+          </div>
+          <span class="reward-badge" id="badge-instant-reward">+0.00</span>
+        </div>
+        <div class="reward-body">
+          <div class="reward-telemetry-row">
+            <div class="r-metric">
+              <span class="r-k">Step Reward</span>
+              <span class="r-v" id="txt-step-reward">+0.00</span>
+            </div>
+            <div class="r-metric">
+              <span class="r-k">Episode Total</span>
+              <span class="r-v cyan" id="txt-cum-reward">+0.0</span>
+            </div>
+          </div>
+          <div class="reward-matrix-strip">
+            <div class="r-badge pos" id="r-matrix-food" title="Eating Food"><span class="r-icon">🍏</span> Food <strong>+10.0</strong></div>
+            <div class="r-badge pos" id="r-matrix-near" title="Moving closer to food"><span class="r-icon">🎯</span> Near <strong>+0.15</strong></div>
+            <div class="r-badge neg" id="r-matrix-far" title="Moving away from food"><span class="r-icon">↩️</span> Far <strong>-0.20</strong></div>
+            <div class="r-badge neg" id="r-matrix-hit" title="Wall or Body Collision"><span class="r-icon">💥</span> Hit <strong>-10.0</strong></div>
+          </div>
+        </div>
       </div>
 
       <!-- Decision / Q-Values -->
@@ -101,14 +131,14 @@
         </div>
       </div>
 
-      <!-- Neural Brain -->
+      <!-- Neural Brain Activity -->
       <div class="card brain-card">
         <div class="card-header">
           <span class="card-title">Neural Brain</span>
           <span class="net-spec">16 → 64 → 32 → 3</span>
         </div>
         <div class="brain-canvas-wrap">
-          <canvas id="canvas-live-brain" width="370" height="110"></canvas>
+          <canvas id="canvas-live-brain" width="370" height="95"></canvas>
         </div>
       </div>
 

@@ -612,6 +612,8 @@ class SnakeRLApp {
     this.totalSteps = 0;
     this.currentEpisode = 1;
     this.bestScore = 0;
+    this.currentStepReward = 0.0;
+    this.episodeCumulativeReward = 0.0;
 
     // Experience Replay Memory
     this.replayMemory = [];
@@ -698,6 +700,16 @@ class SnakeRLApp {
         this.togglePlayPause();
       }
     });
+
+    const chipsRow = document.getElementById('runs-history-list');
+    if (chipsRow) {
+      chipsRow.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          chipsRow.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -775,6 +787,8 @@ class SnakeRLApp {
 
     // Execute Environment Step
     const stepResult = this.game.step(selectedAction);
+    this.currentStepReward = stepResult.reward;
+    this.episodeCumulativeReward += stepResult.reward;
 
     // Sound FX & Sparkle Particles
     if (stepResult.foodEaten) {
@@ -826,7 +840,7 @@ class SnakeRLApp {
 
     // Update Live Telemetry & Decisions in UI
     if (!this.isTurbo || this.totalSteps % 10 === 0) {
-      this.updateUI(selectedAction, isExploratory, qValues, latency);
+      this.updateUI(selectedAction, isExploratory, qValues, latency, stepResult);
     }
 
     // Episode End Handling
@@ -867,6 +881,9 @@ class SnakeRLApp {
     this.epsilon = Math.max(this.epsilonMin, this.epsilon * this.epsilonDecay);
     this.currentEpisode++;
 
+    // Reset cumulative reward for next episode
+    this.episodeCumulativeReward = 0.0;
+
     // Refresh The Last 30 Runs Performance Panel
     this.updateLast30Panel();
 
@@ -880,7 +897,20 @@ class SnakeRLApp {
   updateLast30Panel() {
     const last30 = this.completedRuns.slice(-30);
     const n = last30.length;
-    if (n === 0) return;
+    if (n === 0) {
+      const elAvg = document.getElementById('l30-avg');
+      if (elAvg) elAvg.innerText = '0.0';
+      const elPeak = document.getElementById('l30-peak');
+      if (elPeak) elPeak.innerText = '0';
+      const elBadgeTrend = document.getElementById('badge-runs-trend');
+      if (elBadgeTrend) {
+        elBadgeTrend.innerText = 'Learning';
+        elBadgeTrend.className = 'badge';
+      }
+      this.renderLast30Chart();
+      this.renderLast30HistoryList();
+      return;
+    }
 
     // 1. Metric Computations
     const totalScore = last30.reduce((acc, r) => acc + r.score, 0);
@@ -1082,35 +1112,27 @@ class SnakeRLApp {
 
   renderLast30HistoryList() {
     const listEl = document.getElementById('runs-history-list');
-    const countEl = document.getElementById('txt-history-count');
     if (!listEl) return;
 
     const runs = this.completedRuns.slice(-30).reverse();
-    if (countEl) countEl.innerText = `${runs.length} / 30 recorded`;
 
     if (runs.length === 0) {
-      listEl.innerHTML = '<div class="empty-history-hint">Awaiting first episode completion…</div>';
+      listEl.innerHTML = '<span class="empty-runs-hint">Awaiting completed episodes…</span>';
       return;
     }
 
     listEl.innerHTML = runs.map(r => {
-      let tagClass = 'wall';
-      if (r.reason.includes('Self')) tagClass = 'self';
-      else if (r.reason.includes('Starve')) tagClass = 'starve';
+      const isHigh = r.score >= 12;
+      const isMid = r.score >= 5;
+      const scoreClass = isHigh ? 'high' : (isMid ? 'mid' : '');
+      const cause = r.reason.includes('Self') ? 'Self' : (r.reason.includes('Starve') ? 'Starve' : 'Wall');
+      const causeClass = cause.toLowerCase();
 
-      const isHigh = r.score >= 10;
-      return `
-        <div class="run-item">
-          <div class="run-item-left">
-            <span class="run-num">#${r.episode}</span>
-            <span class="run-score ${isHigh ? 'high' : ''}">${r.score} 🍎</span>
-          </div>
-          <div class="run-item-right">
-            <span>${r.steps} steps</span>
-            <span class="death-tag ${tagClass}">${r.reason.replace(' Collision', '')}</span>
-          </div>
-        </div>
-      `;
+      return `<span class="run-chip ${scoreClass}" title="Episode #${r.episode} • Score: ${r.score} • Steps: ${r.steps} • Cause: ${r.reason}">` +
+        `<span class="chip-ep">#${r.episode}</span>` +
+        `<strong class="chip-score">${r.score}</strong>` +
+        `<span class="chip-cause ${causeClass}">${cause}</span>` +
+      `</span>`;
     }).join('');
   }
 
@@ -1419,15 +1441,15 @@ class SnakeRLApp {
   // ─────────────────────────────────────────────────────────────────────────
   // UI & TELEMETRY UPDATES
   // ─────────────────────────────────────────────────────────────────────────
-  updateUI(action, isExploratory, qValues, latency) {
+  updateUI(action, isExploratory, qValues, latency, stepResult) {
     // 1. Header pills
-    const elHdrScore = document.getElementById('hdr-score');
+    const elHdrScore = document.getElementById('hdr-score') || document.getElementById('stat-score');
     if (elHdrScore) elHdrScore.innerText = this.game.score;
-    const elHdrBest = document.getElementById('hdr-best');
+    const elHdrBest = document.getElementById('hdr-best') || document.getElementById('stat-best');
     if (elHdrBest) elHdrBest.innerText = this.bestScore;
-    const elHdrEp = document.getElementById('hdr-episode');
+    const elHdrEp = document.getElementById('hdr-episode') || document.getElementById('stat-episode');
     if (elHdrEp) elHdrEp.innerText = this.currentEpisode;
-    const elHdrEps = document.getElementById('hdr-epsilon');
+    const elHdrEps = document.getElementById('hdr-epsilon') || document.getElementById('stat-epsilon');
     if (elHdrEps) elHdrEps.innerText = this.isPureGreedy ? '0.000' : this.epsilon.toFixed(3);
 
     // 2. Stat chips
@@ -1441,6 +1463,64 @@ class SnakeRLApp {
     if (elStatEp) elStatEp.innerText = this.currentEpisode;
     const elStatBest = document.getElementById('stat-best');
     if (elStatBest) elStatBest.innerText = this.bestScore;
+
+    // 3. Live Reward & Penalty Signals
+    const rVal = this.currentStepReward;
+    const rCum = this.episodeCumulativeReward;
+    const rSign = rVal > 0 ? '+' : '';
+
+    const elStepR = document.getElementById('txt-step-reward');
+    if (elStepR) {
+      elStepR.innerText = `${rSign}${rVal.toFixed(2)}`;
+      elStepR.className = `r-v ${rVal > 0 ? 'teal' : (rVal < 0 ? 'rose' : '')}`;
+    }
+
+    const elCumR = document.getElementById('txt-cum-reward');
+    if (elCumR) {
+      const cSign = rCum > 0 ? '+' : '';
+      elCumR.innerText = `${cSign}${rCum.toFixed(1)}`;
+      elCumR.className = `r-v ${rCum >= 0 ? 'cyan' : 'rose'}`;
+    }
+
+    const elHdrR = document.getElementById('hdr-reward');
+    if (elHdrR) {
+      elHdrR.innerText = `${rSign}${rVal.toFixed(2)}`;
+      elHdrR.className = `val ${rVal > 0 ? 'teal' : (rVal < 0 ? 'rose' : '')}`;
+    }
+
+    const elBadgeInstant = document.getElementById('badge-instant-reward');
+    if (elBadgeInstant) {
+      elBadgeInstant.innerText = `${rSign}${rVal.toFixed(2)}`;
+      if (rVal >= 10.0) {
+        elBadgeInstant.className = 'reward-badge huge';
+      } else if (rVal > 0) {
+        elBadgeInstant.className = 'reward-badge pos';
+      } else {
+        elBadgeInstant.className = 'reward-badge neg';
+      }
+    }
+
+    // Flash corresponding reward matrix trigger
+    const badgeFood = document.getElementById('r-matrix-food');
+    const badgeNear = document.getElementById('r-matrix-near');
+    const badgeFar = document.getElementById('r-matrix-far');
+    const badgeHit = document.getElementById('r-matrix-hit');
+
+    [badgeFood, badgeNear, badgeFar, badgeHit].forEach(b => {
+      if (b) b.classList.remove('flash-pos', 'flash-neg');
+    });
+
+    if (stepResult) {
+      if (stepResult.foodEaten && badgeFood) {
+        badgeFood.classList.add('flash-pos');
+      } else if (stepResult.done && (this.game.deathReason.includes('Collision') || this.game.deathReason.includes('Starve')) && badgeHit) {
+        badgeHit.classList.add('flash-neg');
+      } else if (rVal > 0 && badgeNear) {
+        badgeNear.classList.add('flash-pos');
+      } else if (rVal < 0 && badgeFar) {
+        badgeFar.classList.add('flash-neg');
+      }
+    }
 
     const totalCells = this.game.gridSize * this.game.gridSize;
     const fillPct = ((this.game.body.length / totalCells) * 100).toFixed(1);
@@ -1616,6 +1696,8 @@ class SnakeRLApp {
     this.totalSteps = 0;
     this.bestScore = 0;
     this.completedRuns = [];
+    this.currentStepReward = 0.0;
+    this.episodeCumulativeReward = 0.0;
 
     const btnBest = document.getElementById('btn-best-mode');
     if (btnBest) {
