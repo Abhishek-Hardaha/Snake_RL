@@ -1126,18 +1126,19 @@ class SnakeRLApp {
 
     ctx.clearRect(0, 0, size, size);
 
-    // 1. Ambient Grid Lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+    // 1. Crisp Internal Grid Lines (zero border clipping)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
     ctx.lineWidth = 1;
-    for (let i = 0; i <= grid; i++) {
+    for (let i = 1; i < grid; i++) {
+      const pos = Math.round(i * cell) + 0.5;
       ctx.beginPath();
-      ctx.moveTo(i * cell, 0);
-      ctx.lineTo(i * cell, size);
+      ctx.moveTo(pos, 0);
+      ctx.lineTo(pos, size);
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.moveTo(0, i * cell);
-      ctx.lineTo(size, i * cell);
+      ctx.moveTo(0, pos);
+      ctx.lineTo(size, pos);
       ctx.stroke();
     }
 
@@ -1312,7 +1313,8 @@ class SnakeRLApp {
   }
 
   spawnParticles(gridX, gridY, type = 'teal') {
-    const cell = 500 / this.game.gridSize;
+    const size = this.canvasGame ? this.canvasGame.width : 440;
+    const cell = size / this.game.gridSize;
     const cx = gridX * cell + cell / 2;
     const cy = gridY * cell + cell / 2;
     for (let i = 0; i < 14; i++) {

@@ -3,620 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Snake RL — High-Performance CPU Deep Q-Learning</title>
-  <meta name="description" content="A stunning, 100% genuine reinforcement learning showcase running purely on the CPU using native JavaScript. Watch an AI learn to play Snake live with real-time performance analytics.">
+  <title>Snake RL — Minimal CPU Deep Q-Learning</title>
+  <meta name="description" content="A minimalist, high-performance reinforcement learning showcase running purely on CPU.">
   
-  <!-- Modern Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       HEADER BAR
-  ═══════════════════════════════════════════════════════════════ -->
+  <!-- Minimal Header -->
   <header id="header">
     <div class="brand">
-      <div class="brand-badge">🐍</div>
-      <div>
-        <div class="brand-title">
-          Snake RL 
-          <span class="cpu-pill">⚡ 100% PURE CPU</span>
-          <span class="badge-tag">NO GPU NEEDED</span>
-        </div>
-        <div class="brand-subtitle">High-Performance Deep Q-Learning • Native JavaScript Matrix Math</div>
-      </div>
+      <span class="brand-icon">🐍</span>
+      <span class="brand-name">Snake RL</span>
+      <span class="cpu-tag">CPU</span>
     </div>
 
-    <!-- Live Telemetry Header Pills -->
-    <div class="telemetry-bar">
-      <div class="telemetry-pill cpu-engine-pill" title="Hardware Execution Engine: Zero WebGL overhead, pure CPU Float32Array SIMD/vector math">
-        <span class="pulse-icon">⚡</span>
-        <span id="txt-engine-name">Native CPU Engine</span>
-      </div>
-      <div class="telemetry-pill">
-        <div class="telemetry-dot active" id="dot-live"></div>
-        <span id="txt-engine-status">Running Live</span>
-      </div>
-      <div class="telemetry-pill">
-        <span>SPS</span>
-        <span class="mono-val teal" id="hdr-sps">0</span>
-      </div>
-      <div class="telemetry-pill">
-        <span>Episode</span>
-        <span class="mono-val cyan" id="hdr-episode">1</span>
-      </div>
-      <div class="telemetry-pill">
-        <span>Score</span>
-        <span class="mono-val gold" id="hdr-score">0</span>
-      </div>
-      <div class="telemetry-pill">
-        <span>Record</span>
-        <span class="mono-val gold" id="hdr-best">0</span>
-      </div>
-      <div class="telemetry-pill">
-        <span>ε (Explore)</span>
-        <span class="mono-val violet" id="hdr-epsilon">1.000</span>
-      </div>
-      <button class="btn btn-audio" id="btn-audio" onclick="app.toggleAudio()" title="Toggle Web Audio Synthesis Sound FX">
-        🔇 Sound: OFF
-      </button>
+    <div class="stats-row">
+      <div class="stat-pill"><span class="lbl">Score</span><span class="val cyan" id="stat-score">0</span></div>
+      <div class="stat-pill"><span class="lbl">Best</span><span class="val gold" id="stat-best">0</span></div>
+      <div class="stat-pill"><span class="lbl">Episode</span><span class="val" id="stat-episode">1</span></div>
+      <div class="stat-pill"><span class="lbl">ε</span><span class="val violet" id="stat-epsilon">1.00</span></div>
+      <div class="stat-pill"><span class="lbl">SPS</span><span class="val teal" id="hdr-sps">0</span></div>
+      <button class="icon-btn" id="btn-audio" onclick="app.toggleAudio()" title="Sound ON/OFF">🔇</button>
     </div>
   </header>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       TAB NAVIGATION
-  ═══════════════════════════════════════════════════════════════ -->
-  <nav id="nav-tabs">
-    <button class="nav-tab-btn active" onclick="app.switchTab('live')">🎮 Live Arena</button>
-    <button class="nav-tab-btn" onclick="app.switchTab('model')">🧠 Neural Deep-Dive</button>
-    <button class="nav-tab-btn" onclick="app.switchTab('stats')">📊 Analytics Lab</button>
-    <button class="nav-tab-btn" onclick="app.switchTab('code')">💻 The Code & Math</button>
-    <button class="nav-tab-btn" onclick="app.switchTab('learn')">📚 RL Academy</button>
+  <!-- Main Showcase Viewport -->
+  <main id="main">
     
-    <!-- Integrity Audit Modal Trigger -->
-    <button class="audit-indicator-btn" onclick="app.openIntegrityModal()" title="View No-Cheating Audit and Mathematical Proof">
-      <span>🛡️ 100% Genuine RL (No Cheating)</span>
-    </button>
-  </nav>
+    <!-- Left Stage: Arena Window & Minimal Controls -->
+    <section class="arena-stage">
+      <div class="board-frame" id="board-wrapper">
+        <canvas id="canvas-game" width="440" height="440"></canvas>
+        <canvas id="canvas-overlay" width="440" height="440"></canvas>
+      </div>
 
-  <!-- ═══════════════════════════════════════════════════════════════
-       MAIN VIEWPORT
-  ═══════════════════════════════════════════════════════════════ -->
-  <main id="main-viewport">
-
-    <!-- ─────────────────────────────────────────────────────────────
-         TAB 1: LIVE ARENA (MAIN STAGE)
-    ───────────────────────────────────────────────────────────── -->
-    <section class="tab-pane active" id="pane-live">
-      
-      <!-- STAGE LEFT: MIND OF THE AGENT (DECISIONS, PERCEPTION & NARRATOR) -->
-      <aside class="stage-left">
-        
-        <!-- Model Decision & Live Q-Values -->
-        <div class="panel decision-card">
-          <div class="panel-header">
-            <span class="panel-title">🎲 Policy Decision &amp; Q-Values</span>
-            <span class="badge" id="badge-decision-type">EXPLORE</span>
-          </div>
-          
-          <div class="action-source-box">
-            <span class="action-source-label">Current Action:</span>
-            <strong id="txt-action-source">Straight</strong>
-            <span class="badge-mini" id="badge-policy-mode">Random ε-Move</span>
-          </div>
-
-          <div class="qvalues-container" id="qvalues-container">
-            <!-- Dynamically populated Q-value meters -->
-            <div class="q-row" id="q-row-0">
-              <div class="q-label-group">
-                <span class="q-dir-icon">⬆️</span>
-                <span class="q-name">Straight</span>
-                <span class="q-val-num mono-val cyan" id="q-val-0">0.00</span>
-              </div>
-              <div class="q-track"><div class="q-bar cyan" id="q-bar-0" style="width: 33%"></div></div>
-            </div>
-            <div class="q-row" id="q-row-1">
-              <div class="q-label-group">
-                <span class="q-dir-icon">➡️</span>
-                <span class="q-name">Turn Right</span>
-                <span class="q-val-num mono-val teal" id="q-val-1">0.00</span>
-              </div>
-              <div class="q-track"><div class="q-bar teal" id="q-bar-1" style="width: 33%"></div></div>
-            </div>
-            <div class="q-row" id="q-row-2">
-              <div class="q-label-group">
-                <span class="q-dir-icon">⬅️</span>
-                <span class="q-name">Turn Left</span>
-                <span class="q-val-num mono-val violet" id="q-val-2">0.00</span>
-              </div>
-              <div class="q-track"><div class="q-bar violet" id="q-bar-2" style="width: 33%"></div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Agent Perception (16 Egocentric Sensors) -->
-        <div class="panel perception-panel">
-          <div class="panel-header">
-            <span class="panel-title">👁️ Egocentric Perception (16 Sensors)</span>
-            <span class="badge badge-cyan" id="badge-sensors">Normalized Float32</span>
-          </div>
-          <div class="state-features-grid" id="state-features-container">
-            <!-- Sensor items populated dynamically -->
-          </div>
-        </div>
-
-        <!-- Plain-English Real-Time Narrator -->
-        <div class="panel narrator-panel">
-          <div class="panel-header">
-            <span class="panel-title">🗣️ Plain-English Narrator</span>
-            <span class="badge badge-teal" id="badge-narrator">LIVE</span>
-          </div>
-          <div id="narrator-stream">
-            <!-- Dynamically populated logs -->
-          </div>
-        </div>
-
-        <!-- Learning Telemetry -->
-        <div class="panel telemetry-panel">
-          <div class="panel-header">
-            <span class="panel-title">📈 Learning Telemetry</span>
-            <span class="badge badge-amber">CPU Backprop</span>
-          </div>
-          <div class="telemetry-rows">
-            <div class="data-row">
-              <span class="k">Loss (Huber)</span>
-              <span class="v cyan" id="data-loss">0.0000</span>
-            </div>
-            <div class="data-row">
-              <span class="k">Avg Predicted Q</span>
-              <span class="v amber" id="data-avg-q">0.000</span>
-            </div>
-            <div class="data-row">
-              <span class="k">CPU Forward Latency</span>
-              <span class="v teal" id="data-latency">&lt; 0.003 ms</span>
-            </div>
-            <div class="data-row">
-              <span class="k">Total Steps</span>
-              <span class="v" id="data-total-steps">0</span>
-            </div>
-            <div class="data-row">
-              <span class="k">Experience Buffer</span>
-              <span class="v" id="data-buffer-size">0 / 20,000</span>
-            </div>
-            <div class="data-row starvation-row">
-              <div class="starve-label-line">
-                <span class="k">Starvation Timer</span>
-                <span class="v amber" id="data-starvation">0 / 100</span>
-              </div>
-              <div class="starve-track">
-                <div class="starve-fill" id="data-starvation-fill" style="width: 0%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      <!-- STAGE CENTER: THE HERO GAME ARENA -->
-      <main class="stage-center">
-        <!-- Top Stat Ribbon -->
-        <div class="stat-strip">
-          <div class="stat-chip">
-            <span class="stat-chip-label">Apples</span>
-            <span class="stat-chip-val cyan" id="stat-score">0</span>
-          </div>
-          <div class="stat-chip">
-            <span class="stat-chip-label">Length</span>
-            <span class="stat-chip-val teal" id="stat-length">1</span>
-          </div>
-          <div class="stat-chip">
-            <span class="stat-chip-label">Steps Survived</span>
-            <span class="stat-chip-val" id="stat-steps">0</span>
-          </div>
-          <div class="stat-chip">
-            <span class="stat-chip-label">Episode</span>
-            <span class="stat-chip-val violet" id="stat-episode">1</span>
-          </div>
-          <div class="stat-chip">
-            <span class="stat-chip-label">All-Time Best</span>
-            <span class="stat-chip-val gold" id="stat-best">0</span>
-          </div>
-          <div class="stat-chip">
-            <span class="stat-chip-label">Grid Fill</span>
-            <span class="stat-chip-val amber" id="stat-fill">1.6%</span>
-          </div>
-        </div>
-
-        <!-- The Canvas Arena (Centerpiece Window) -->
-        <div class="board-wrapper" id="board-wrapper">
-          <canvas id="canvas-game" width="500" height="500"></canvas>
-          <canvas id="canvas-overlay" width="500" height="500"></canvas>
-        </div>
-
-        <!-- Grid Fill Victory Goal Progress Bar -->
-        <div class="fill-bar-container">
-          <div class="fill-bar-header">
-            <span>Victory Goal: Complete Grid Fill</span>
-            <strong id="fill-cell-count">1 / 64 cells</strong>
-          </div>
-          <div class="fill-track">
-            <div class="fill-fill" id="fill-bar-fill" style="width: 1.6%"></div>
-          </div>
-        </div>
-
-        <!-- Primary Control Center -->
-        <div class="controls-bar">
-          <button class="btn btn-primary" id="btn-play-pause" onclick="app.togglePlayPause()" title="Pause or Resume simulation (Shortcut: Space)">
-            ⏸ Pause
-          </button>
-          <button class="btn" id="btn-step" onclick="app.stepSingleMove()" title="Execute exactly one step">
-            ⏭ Step Once
-          </button>
-          <button class="btn btn-highlight" id="btn-best-mode" onclick="app.toggleBestMode()" title="Set epsilon to 0 to test pure learned policy without random exploration">
-            🎯 Pure Greedy (ε=0): OFF
-          </button>
-          <button class="btn btn-turbo" id="btn-turbo" onclick="app.toggleTurbo()" title="Unleash CPU power: trains at 1,000+ steps per second">
-            ⚡ Turbo Train: OFF
-          </button>
-          <button class="btn btn-champion" id="btn-load-champion" onclick="app.loadChampionWeights()" title="Load pre-trained master weights to immediately watch high-level expert play">
-            🏆 Load Master Brain
-          </button>
-          <button class="btn btn-danger" onclick="app.restartFromScratch()" title="Reinitialize neural network with fresh random weights (train from scratch)">
-            🔄 Train From Scratch
-          </button>
-        </div>
-
-        <!-- Secondary Controls Strip -->
-        <div class="subcontrols-row">
-          <div class="ctrl-item">
-            <span>Speed:</span>
-            <input type="range" class="speed-slider" id="speed-slider" min="1" max="120" value="30" oninput="app.setSpeed(this.value)">
-            <span class="mono-val cyan" id="speed-label">30 st/s</span>
-          </div>
-          <div class="ctrl-item">
-            <span>Grid:</span>
-            <select class="select-input" id="select-grid-size" onchange="app.changeGridSize(this.value)">
-              <option value="6">6 × 6 (36 cells)</option>
-              <option value="8" selected>8 × 8 (64 cells)</option>
-              <option value="10">10 × 10 (100 cells)</option>
-            </select>
-          </div>
-          <div class="ctrl-item">
-            <span>Theme:</span>
-            <select class="select-input" id="select-theme" onchange="app.changeTheme(this.value)">
-              <option value="cyber" selected>Cyber Neon</option>
-              <option value="matrix">Matrix Emerald</option>
-              <option value="synthwave">Synthwave Sunset</option>
-              <option value="gold">Obsidian Gold</option>
-            </select>
-          </div>
-          <div class="ctrl-item">
-            <label class="checkbox-label" title="Show raycast vision whiskers from the snake's head">
-              <input type="checkbox" id="chk-overlay" onchange="app.togglePerceptionOverlay(this.checked)" checked>
-              <span>Perception Rays</span>
-            </label>
-          </div>
-        </div>
-      </main>
-
-      <!-- STAGE RIGHT: THE LAST 30 RUNS PERFORMANCE & BRAIN VISUALIZER -->
-      <aside class="stage-right">
-        
-        <!-- ═══════════════════════════════════════════════════════════
-             ⭐ THE LAST 30 RUNS PERFORMANCE SECTION (PROMINENT ON MAIN SCREEN)
-        ═══════════════════════════════════════════════════════════ -->
-        <div class="panel runs-perf-panel">
-          <div class="panel-header">
-            <div class="panel-header-left">
-              <span class="panel-title">📈 Last 30 Runs Performance</span>
-              <span class="badge badge-teal" id="badge-runs-trend">SURGING</span>
-            </div>
-            <div class="header-stat-hint">Rolling Window</div>
-          </div>
-
-          <!-- Highlight Metric Cards for Last 30 Runs -->
-          <div class="perf-metric-grid">
-            <div class="metric-card">
-              <span class="m-label">Last 30 Avg</span>
-              <span class="m-val cyan" id="l30-avg">0.00</span>
-              <span class="m-sub">apples/game</span>
-            </div>
-            <div class="metric-card">
-              <span class="m-label">Last 30 Peak</span>
-              <span class="m-val gold" id="l30-peak">0</span>
-              <span class="m-sub">best score</span>
-            </div>
-            <div class="metric-card">
-              <span class="m-label">Avg Survival</span>
-              <span class="m-val teal" id="l30-steps">0</span>
-              <span class="m-sub">steps/run</span>
-            </div>
-            <div class="metric-card">
-              <span class="m-label">Food Efficiency</span>
-              <span class="m-val violet" id="l30-efficiency">0.0%</span>
-              <span class="m-sub">app/100 steps</span>
-            </div>
-          </div>
-
-          <!-- Interactive Performance Chart Canvas for Last 30 Runs -->
-          <div class="runs-chart-container">
-            <div class="runs-chart-header">
-              <div class="chart-legend-row">
-                <span class="legend-item"><span class="legend-dot dot-bar"></span>Score per Run</span>
-                <span class="legend-item"><span class="legend-dot dot-trend"></span>10-Run Moving Avg</span>
-                <span class="legend-item"><span class="legend-dot dot-record"></span>High-Water Mark</span>
-              </div>
-              <span class="chart-hover-hint">Hover bars for run telemetry</span>
-            </div>
-            <div class="chart-canvas-wrap">
-              <canvas id="canvas-last-30" width="380" height="140"></canvas>
-              <!-- Floating Interactive Tooltip -->
-              <div class="chart-tooltip" id="tooltip-last-30"></div>
-            </div>
-          </div>
-
-          <!-- Recent Runs History Log (Scrollable Feed) -->
-          <div class="runs-history-container">
-            <div class="runs-history-header">
-              <span>Run History (Last 30)</span>
-              <span class="history-count" id="txt-history-count">0 recorded</span>
-            </div>
-            <div class="runs-history-list" id="runs-history-list">
-              <div class="empty-history-hint">Awaiting first episode completion…</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Live Neural Network Brain Visualizer -->
-        <div class="panel brain-panel">
-          <div class="panel-header">
-            <span class="panel-title">🧠 Live Neural Brain Activity</span>
-            <span class="badge badge-cyan">Real-Time ReLU Glow</span>
-          </div>
-          <div class="brain-viz-wrap">
-            <canvas id="canvas-live-brain" width="380" height="190"></canvas>
-          </div>
-          <div class="brain-meta-row">
-            <div class="brain-stat-chip">
-              <span class="b-lbl">Architecture:</span>
-              <span class="b-val">16 → 64 → 32 → 3</span>
-            </div>
-            <div class="brain-stat-chip">
-              <span class="b-lbl">Parameters:</span>
-              <span class="b-val cyan">3,267 weights</span>
-            </div>
-            <div class="brain-stat-chip">
-              <span class="b-lbl">Activation:</span>
-              <span class="b-val teal">ReLU + Linear</span>
-            </div>
-          </div>
-        </div>
-
-      </aside>
-    </section>
-
-    <!-- ─────────────────────────────────────────────────────────────
-         TAB 2: BEHIND THE SCENES (NEURAL DEEP-DIVE)
-    ───────────────────────────────────────────────────────────── -->
-    <section class="tab-pane" id="pane-model">
-      <div class="deep-dive-grid">
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">📐 Deep Q-Network Mathematical Architecture</span>
-            <span class="badge badge-cyan">Float32 Dense</span>
-          </div>
-          <div class="deep-dive-content">
-            <div class="arch-layer-card">
-              <div class="layer-title">Layer 0: Egocentric Observation Vector (Input)</div>
-              <p>Dimension: <strong>16 floats</strong>. 3 danger reflex whiskers, 4 orientation compass one-hot flags, 4 food quadrant bearings, 2 normalized Manhattan delta coordinates, and 3 continuous obstacle raycast clearances.</p>
-            </div>
-            <div class="arch-layer-card">
-              <div class="layer-title">Layer 1: Hidden Dense ReLU (W₁: 16×64, b₁: 64)</div>
-              <p>1,024 weights, 64 biases. He-Normal initialization with zero activation drift. Learns spatial corridors and dead-end avoidance.</p>
-            </div>
-            <div class="arch-layer-card">
-              <div class="layer-title">Layer 2: Hidden Dense ReLU (W₂: 64×32, b₂: 32)</div>
-              <p>2,048 weights, 32 biases. Synthesizes spatial depth with goal-seeking trajectory policies.</p>
-            </div>
-            <div class="arch-layer-card">
-              <div class="layer-title">Layer 3: Value Head Linear (W₃: 32×3, b₃: 3)</div>
-              <p>96 weights, 3 biases. Outputs exact scalar action values: $Q(s, \text{Straight})$, $Q(s, \text{Turn Right})$, $Q(s, \text{Turn Left})$.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">💾 Experience Replay Buffer Memory</span>
-            <span class="badge badge-teal" id="badge-replay-count">0 Transitions</span>
-          </div>
-          <div class="replay-table-wrap">
-            <table class="replay-table" id="replay-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Action</th>
-                  <th>Reward</th>
-                  <th>Terminal</th>
-                  <th>Max Q(s')</th>
-                </tr>
-              </thead>
-              <tbody id="replay-table-body">
-                <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-dim);">Replay buffer populating…</td></tr>
-              </tbody>
-            </table>
-          </div>
+      <div class="controls-dock">
+        <button class="btn btn-primary" id="btn-play-pause" onclick="app.togglePlayPause()">⏸ Pause</button>
+        <button class="btn btn-turbo" id="btn-turbo" onclick="app.toggleTurbo()">⚡ Turbo</button>
+        <button class="btn btn-champ" id="btn-load-champion" onclick="app.loadChampionWeights()">🏆 Master Brain</button>
+        <button class="btn btn-reset" onclick="app.restartFromScratch()">🔄 Reset</button>
+        <div class="speed-wrap" title="Speed">
+          <input type="range" class="speed-slider" id="speed-slider" min="5" max="100" value="30" oninput="app.setSpeed(this.value)">
+          <span class="speed-val" id="speed-label">30/s</span>
         </div>
       </div>
     </section>
 
-    <!-- ─────────────────────────────────────────────────────────────
-         TAB 3: ANALYTICS LAB
-    ───────────────────────────────────────────────────────────── -->
-    <section class="tab-pane" id="pane-stats">
-      <div class="analytics-charts-grid">
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">📉 Training Loss Curve (Huber / Smooth L1)</span>
+    <!-- Right Stage: Last 30 Runs Performance & Real-Time Thoughts -->
+    <aside class="sidebar">
+
+      <!-- ⭐ The Last 30 Runs Performance Panel -->
+      <div class="card perf-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="card-title">Last 30 Runs</span>
+            <span class="badge" id="badge-runs-trend">Learning</span>
           </div>
-          <div class="chart-canvas-box">
-            <canvas id="chart-loss" width="550" height="240"></canvas>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">📈 All-Time Score History &amp; 20-Run Moving Average</span>
-          </div>
-          <div class="chart-canvas-box">
-            <canvas id="chart-all-scores" width="550" height="240"></canvas>
+          <div class="perf-metrics-inline">
+            <span>Avg <strong class="cyan" id="l30-avg">0.0</strong></span>
+            <span>Peak <strong class="gold" id="l30-peak">0</strong></span>
           </div>
         </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">🎯 Epsilon (ε) Exploration Decay Schedule</span>
-          </div>
-          <div class="chart-canvas-box">
-            <canvas id="chart-epsilon" width="550" height="240"></canvas>
-          </div>
+
+        <div class="chart-wrap">
+          <canvas id="canvas-last-30" width="370" height="125"></canvas>
+          <div class="chart-tooltip" id="tooltip-last-30"></div>
         </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">⚡ Average Action Value Q(s, a) Evolution</span>
+
+        <div class="runs-feed" id="runs-history-list"></div>
+      </div>
+
+      <!-- Decision / Q-Values -->
+      <div class="card decision-card">
+        <div class="card-header">
+          <span class="card-title">Decision</span>
+          <span class="policy-tag" id="badge-policy-mode">Q-Policy</span>
+        </div>
+        <div class="q-bars-grid">
+          <div class="q-item">
+            <div class="q-label-line"><span>Straight</span><span class="q-val cyan" id="q-val-0">0.00</span></div>
+            <div class="bar-bg"><div class="bar-fill cyan" id="q-bar-0" style="width: 33%"></div></div>
           </div>
-          <div class="chart-canvas-box">
-            <canvas id="chart-qvalues" width="550" height="240"></canvas>
+          <div class="q-item">
+            <div class="q-label-line"><span>Right</span><span class="q-val teal" id="q-val-1">0.00</span></div>
+            <div class="bar-bg"><div class="bar-fill teal" id="q-bar-1" style="width: 33%"></div></div>
+          </div>
+          <div class="q-item">
+            <div class="q-label-line"><span>Left</span><span class="q-val violet" id="q-val-2">0.00</span></div>
+            <div class="bar-bg"><div class="bar-fill violet" id="q-bar-2" style="width: 33%"></div></div>
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- ─────────────────────────────────────────────────────────────
-         TAB 4: THE CODE & MATH
-    ───────────────────────────────────────────────────────────── -->
-    <section class="tab-pane" id="pane-code">
-      <div class="code-explainer-grid">
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">📐 The Bellman Optimality Equation</span>
-          </div>
-          <div class="math-card">
-            <div class="math-formula">
-              $$Q^*(s, a) = \mathbb{E}\left[ r + \gamma \max_{a'} Q^*(s', a') \;\middle|\; s, a \right]$$
-            </div>
-            <p>At every step $t$, the agent receives reward $r_t$ and transitions to state $s_{t+1}$. The loss function minimizes the Huber error between the current prediction $Q(s, a; \theta)$ and the Target Network estimate:</p>
-            <div class="math-formula">
-              $$y_i = \begin{cases} r_i & \text{if } s'_i \text{ is terminal} \\ r_i + \gamma \max_{a'} Q(s'_i, a'; \theta^-) & \text{otherwise} \end{cases}$$
-            </div>
-          </div>
+      <!-- Neural Brain -->
+      <div class="card brain-card">
+        <div class="card-header">
+          <span class="card-title">Neural Brain</span>
+          <span class="net-spec">16 → 64 → 32 → 3</span>
         </div>
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">💻 Pure CPU Vectorized JavaScript Engine</span>
-          </div>
-          <div class="code-snippet-box">
-            <pre><code>// Blazing fast cache-friendly forward pass in native JS
-forward(x) {
-  // Layer 1: 16 -> 64 with ReLU
-  for (let j = 0; j &lt; 64; j++) {
-    let s = this.b1[j];
-    const off = j * 16;
-    for (let i = 0; i &lt; 16; i++) s += this.W1[off + i] * x[i];
-    this.h1[j] = s &gt; 0 ? s : 0;
-  }
-  // Layer 2: 64 -> 32 with ReLU
-  for (let j = 0; j &lt; 32; j++) {
-    let s = this.b2[j];
-    const off = j * 64;
-    for (let i = 0; i &lt; 64; i++) s += this.W2[off + i] * this.h1[i];
-    this.h2[j] = s &gt; 0 ? s : 0;
-  }
-  // Layer 3: 32 -> 3 Linear Q-values
-  for (let j = 0; j &lt; 3; j++) {
-    let s = this.b3[j];
-    const off = j * 32;
-    for (let i = 0; i &lt; 32; i++) s += this.W3[off + i] * this.h2[i];
-    this.out[j] = s;
-  }
-  return this.out;
-}</code></pre>
-          </div>
+        <div class="brain-canvas-wrap">
+          <canvas id="canvas-live-brain" width="370" height="110"></canvas>
         </div>
       </div>
-    </section>
 
-    <!-- ─────────────────────────────────────────────────────────────
-         TAB 5: RL ACADEMY
-    ───────────────────────────────────────────────────────────── -->
-    <section class="tab-pane" id="pane-learn">
-      <div class="academy-grid">
-        <div class="panel lesson-card">
-          <div class="lesson-num">LESSON 01</div>
-          <div class="lesson-title">Markov Decision Processes (MDP)</div>
-          <p>Reinforcement learning frames decision-making as an MDP consisting of States $(S)$, Actions $(A)$, Rewards $(R)$, and Transition probabilities $(P)$. The Markov property asserts that the future depends solely on the current state and action.</p>
-        </div>
-        <div class="panel lesson-card">
-          <div class="lesson-num">LESSON 02</div>
-          <div class="lesson-title">Exploration vs. Exploitation (ε-Greedy)</div>
-          <p>Early on ($\epsilon = 1.0$), the agent takes random moves to explore the state space. As episodes progress, $\epsilon$ decays exponentially to $0.01$, transitioning from discovery to ruthless policy execution.</p>
-        </div>
-        <div class="panel lesson-card">
-          <div class="lesson-num">LESSON 03</div>
-          <div class="lesson-title">Experience Replay &amp; Decorrelation</div>
-          <p>Consecutive game frames are heavily correlated. Storing transitions $(s, a, r, s', d)$ in a 20,000-sample circular memory and randomly batching break temporal correlations, stabilizing backpropagation.</p>
-        </div>
-        <div class="panel lesson-card">
-          <div class="lesson-num">LESSON 04</div>
-          <div class="lesson-title">Why Pure CPU is Faster Here</div>
-          <p>For small neural networks (3,267 parameters), GPU dispatch overhead and WebGL texture readback introduce 5–15 ms latency per step. Handcrafted CPU Float32Array SIMD operations complete in 0.002 ms—over 500× faster for reinforcement learning loops!</p>
-        </div>
-      </div>
-    </section>
-
+    </aside>
   </main>
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       INTEGRITY & NO-CHEATING PROOF MODAL
-  ═══════════════════════════════════════════════════════════════ -->
-  <div class="modal-backdrop" id="modal-audit" style="display: none;" onclick="if(event.target===this) app.closeIntegrityModal()">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">🛡️ Proof of Genuine Learning &amp; Integrity Guarantee</div>
-        <button class="modal-close-btn" onclick="app.closeIntegrityModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="audit-check-item">
-          <span class="audit-icon">✅</span>
-          <div>
-            <strong>Zero Hardcoded Pathfinding (No A*, BFS, or Hamiltonian Cycles)</strong>
-            <p>Every single decision comes strictly from forward passes through the 3-layer neural network or explicit pseudo-random exploration.</p>
-          </div>
-        </div>
-        <div class="audit-check-item">
-          <span class="audit-icon">✅</span>
-          <div>
-            <strong>100% Genuine CPU Computation</strong>
-            <p>All weights, gradients, Adam moment updates, and Huber loss calculations execute directly in native JavaScript Float32Array on your CPU.</p>
-          </div>
-        </div>
-        <div class="audit-check-item">
-          <span class="audit-icon">✅</span>
-          <div>
-            <strong>Strict Classic Snake Rules</strong>
-            <p>Wall hits kill instantly. Body collisions kill instantly. Exactly one food item spawns uniformly at random on vacant cells.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
 
-<!-- Core Engine Script -->
 <script src="snake-rl.js"></script>
 </body>
 </html>
